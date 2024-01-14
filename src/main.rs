@@ -330,6 +330,26 @@ fn main() {
                 if (std::time::Instant::now() - failed_time).as_secs() >= 5 {
                     active = false;
                 }
+            } else { // wow
+                let wrapped = word_wrap(
+                    &format!("Have been inactive for {}. Keep going!", format_duration(std::time::Instant::now() - clock_started)), width, &segoe_font
+                );
+                let h = wrapped.len() as i32 * segoe_font.height();
+                let mut yc = (((height / 2) - h as u32) / 2) as i32;
+                for line in wrapped {
+                    let rendered = segoe_font.render(&line).shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK).unwrap();
+                    canvas.copy(
+                        &tc.create_texture_from_surface(&rendered).unwrap(),
+                        None,
+                        sdl2::rect::Rect::new(
+                            ((width - rendered.width()) / 2) as i32,
+                            yc as i32,
+                            rendered.width(),
+                            rendered.height()
+                        )
+                    ).unwrap();
+                    yc += segoe_font.height();
+                }
             }
         }
         let fps_text = fps_font

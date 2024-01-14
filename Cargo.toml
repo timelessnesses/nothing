@@ -3,20 +3,25 @@ name = "nothing_rust_sdl2"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "main"
+crate-type = ["cdylib"]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ctrlc = "3.4.2"
-msgbox = "0.7.0"
+libc = "0.2.152"
+# ctrlc = "3.4.2"
+# msgbox = "0.7.0" 
 # winapi = { version = "0.3.9", features = ["winuser"] }
-# sdl2 = { version = "0.36.0", features = ["ttf", "static-link", "use-vcpkg"] }
+sdl2 = { version = "0.36.0", features = ["ttf"] }
 
-[target.'cfg(target_os = "windows")'.dependencies]
-sdl2 = { version = "0.36.0", features = ["use-vcpkg", "ttf", "static-link"], default-features = false }
-winapi = { version = "0.3.9", features = ["winuser", "wincon"] }
+# [target.'cfg(target_os = "windows")'.dependencies]
+# sdl2 = { version = "0.36.0", features = ["use-vcpkg", "ttf", "static-link"], default-features = false }
+# winapi = { version = "0.3.9", features = ["winuser", "wincon"] }
 
-[target.'cfg(not(target_os = "windows"))'.dependencies]
-sdl2 = { version = "0.36.0", features = ["use-pkgconfig", "ttf", "static-link"], default-features = false } #2
+# [target.'cfg(target_os = "linux")'.dependencies] # linux only for now :3
+# sdl2 = { version = "0.36.0", features = ["use-pkgconfig", "ttf", "static-link"], default-features = false }
 
 [package.metadata.vcpkg]
 dependencies = ["sdl2", "sdl2-ttf"]

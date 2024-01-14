@@ -4,17 +4,7 @@ Nothing, a fan made game to make fun of this [game](https://store.steampowered.c
 
 ## Building
 
-Probably cross platform (Windows/Linux/Android) (Yes, fuck MacOS and iOS in general.)
-For Android just switch to the android branch for detailed stuff
-
-### Windows
-
-1. install `cargo-vcpkg` with `cargo install cargo-vcpkg`
-2. download sdl2 library for windows then put that into toolchain's library folder (info: [https://github.com/Rust-SDL2/rust-sdl2?tab=readme-ov-file#windows-msvc])
-3. `cargo build -r` and magic
-
-### Linux and everything else (Linux is tested while other isn't)
-
-1. Install `libsdl2-dev` and `libsdl2-ttf-dev`
-2. Install `pkgconfig`
-3. `cargo build -r`
+1. Install these toolchains `aarch64-linux-android armv7-linux-androideabi i686-linux-android`
+2. Download SDL2 source code
+3. Extract the SDL2 zip file then go to extracted location then build it with `ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=./Android.mk APP_PLATFORM=android-21`
+4. Move `android-project` folder to the project folder

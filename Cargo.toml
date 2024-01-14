@@ -16,8 +16,8 @@ winapi = { version = "0.3.9", features = ["winuser"] }
 sdl2 = { version = "0.36.0", features = ["use-vcpkg", "ttf", "static-link"], default-features = false }
 winapi = { version = "0.3.9", features = ["winuser", "wincon"] }
 
-# [target.'cfg(not(target_os = "windows"))'.dependencies]
-# sdl2 = { version = "0.36.0", features = ["use-pkgconfig", "ttf", "static-link"], default-features = false } #2
+[target.'cfg(not(target_os = "windows"))'.dependencies]
+sdl2 = { version = "0.36.0", features = ["use-pkgconfig", "ttf", "static-link"], default-features = false } #2
 
 [package.metadata.vcpkg]
 dependencies = ["sdl2", "sdl2-ttf"]

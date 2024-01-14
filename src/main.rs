@@ -189,6 +189,8 @@ fn main() {
     let mut lf = 0.0; // minimum fps (shows on screen)
     let mut lpf = 0.0; // act as a cache
     let mut lft = std::time::Instant::now(); // minimum frame refresh time thingy
+
+    let (width, height) = canvas.output_size().unwrap();
     'running: while running {
         // println!("Rendering");
         for event in event_pump.poll_iter() {
@@ -225,7 +227,7 @@ fn main() {
                         println!("Quit");
                         break 'running;
                     }
-                    sdl2::event::Event::KeyDown { .. } | sdl2::event::Event::KeyUp { .. } => {
+                    sdl2::event::Event::KeyDown { .. } => { //  | sdl2::event::Event::KeyUp { .. }
                         if ignore_first_keypress {
                             ignore_first_keypress = false;
                             continue;
@@ -241,14 +243,13 @@ fn main() {
                             ignore_first_keypress = false;
                             continue;
                         }
-                        mouse_move_active = true;
+                        mouse_move_active = true;       
                         if !failed {
                             failed_time = std::time::Instant::now();
                             failed = true;
                         }
                     }
-                    sdl2::event::Event::MouseButtonDown { .. }
-                    | sdl2::event::Event::MouseButtonUp { .. } => {
+                    sdl2::event::Event::MouseButtonDown { .. } => { // | sdl2::event::Event::MouseButtonUp { .. }
                         if ignore_first_keypress {
                             ignore_first_keypress = false;
                             continue;
@@ -290,65 +291,57 @@ fn main() {
             if kb_active || mouse_button_active || mouse_move_active || mouse_wheel_active {
                 failed = true;
                 // let mut duration_time = "";
-                let mut reasoning = "";
+                let mut reasoning: Vec<&str> = Vec::new();
                 if kb_active {
-                    reasoning = "Keyboard presses detected.";
-                } else if mouse_button_active {
-                    reasoning = "Mouse button presses detected."
-                } else if mouse_move_active {
-                    reasoning = "Mouse movement detected."
-                } else if mouse_wheel_active {
-                    reasoning = "Mouse wheel movement detected."
+                    reasoning.push("Keyboard presses detected");
+                } 
+                if mouse_button_active {
+                    reasoning.push("Mouse button presses detected")
+                }
+                if mouse_move_active {
+                    reasoning.push("Mouse movement detected")
+                }
+                if mouse_wheel_active {
+                    reasoning.push("Mouse wheel movement detected")
                 }
                 let duration_time = format!(
                     "Inactive for {}",
                     format_duration(failed_time - clock_started)
                 );
-                let text = segoe_font
-                    .render(&duration_time)
-                    .shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK)
-                    .unwrap();
-                let text2 = segoe_font
-                    .render(format!("Reason: {}", reasoning).as_str())
-                    .shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK)
-                    .unwrap();
-                canvas
-                    .copy(
-                        &tc.create_texture_from_surface(&text).unwrap(),
+                let wrapped = word_wrap(
+                    &format!("{} Reason: {}", duration_time, reasoning.join(", ") + "."), width, &segoe_font
+                );
+                let h = wrapped.len() as i32 * segoe_font.height();
+                let mut yc = (((height / 2) - h as u32) / 2) as i32;
+                for line in wrapped {
+                    let rendered = segoe_font.render(&line).shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK).unwrap();
+                    canvas.copy(
+                        &tc.create_texture_from_surface(&rendered).unwrap(),
                         None,
-                        Some(get_middle_surface(
-                            &text,
-                            &canvas,
-                            Some((canvas.output_size().unwrap().1 as f64 * 0.4) as u32),
-                        )),
-                    )
-                    .unwrap();
-                canvas
-                    .copy(
-                        &tc.create_texture_from_surface(&text2).unwrap(),
-                        None,
-                        Some(get_middle_surface(
-                            &text2,
-                            &canvas,
-                            Some((canvas.output_size().unwrap().1 as f64 * 0.6) as u32),
-                        )),
-                    )
-                    .unwrap();
+                        sdl2::rect::Rect::new(
+                            ((width - rendered.width()) / 2) as i32,
+                            yc as i32,
+                            rendered.width(),
+                            rendered.height()
+                        )
+                    ).unwrap();
+                    yc += segoe_font.height();
+                }
                 if (std::time::Instant::now() - failed_time).as_secs() >= 5 {
                     active = false;
                 }
             }
         }
         let fps_text = fps_font
-            .render(&format!("FPS: {}", fps))
+            .render(&format!("FPS: {}", truncate(fps, 2)))
             .shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK)
             .unwrap();
         let mf_text = fps_font
-            .render(&format!("Maximum FPS: {}", mf))
+            .render(&format!("Maximum FPS: {}", truncate(mf, 2)))
             .shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK)
             .unwrap();
         let lfp_text = fps_font
-            .render(&format!("Minimum FPS: {}", lf))
+            .render(&format!("Minimum FPS: {}", truncate(lf, 2)))
             .shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK)
             .unwrap();
         let fc_text = fps_font
@@ -427,7 +420,7 @@ fn main() {
     }
 }
 
-fn get_middle_surface(
+fn _get_middle_surface(
     surface: &sdl2::surface::Surface,
     window: &sdl2::render::Canvas<sdl2::video::Window>,
     y: Option<u32>,
@@ -548,4 +541,36 @@ fn format_duration(dur: std::time::Duration) -> String {
     };
 
     formatted_duration
+}
+fn word_wrap<'a, 'b, 'c>(
+    text: &str,
+    max_width: u32,
+    font: &'c sdl2::ttf::Font<'a, 'b>,
+) -> Vec<String> {
+    let words = text.split_whitespace();
+    let mut lines: Vec<String> = Vec::new();
+    let mut current_line = String::new();
+
+    for word in words {
+        let test_line = current_line.clone() + word + " ";
+        let (test_width, _) = font.size_of(&test_line).unwrap();
+
+        if test_width <= max_width {
+            current_line = test_line;
+        } else {
+            lines.push(current_line.trim_end().to_string());
+            current_line = word.to_owned() + " ";
+        }
+    }
+
+    if !current_line.trim().is_empty() {
+        lines.push(current_line.trim_end().to_string());
+    }
+
+    // println!("{:#?}", lines);
+    lines
+}
+
+fn truncate(b: f64, precision: usize) -> f64 {
+    f64::trunc(b * ((10 * precision) as f64)) / ((10 * precision) as f64)
 }

@@ -1,25 +1,25 @@
 use std::time::Instant;
 
-use sdl2;
 use clap::Parser;
 use ctrlc;
+use sdl2;
 // use winit;
 use msgbox;
 
-mod windows_quirks;
 mod fps_capper;
+mod windows_quirks;
 
 #[derive(Debug)]
 struct CustomError {
-    msg: String
+    msg: String,
 }
-impl std::fmt::Display for CustomError{
+impl std::fmt::Display for CustomError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.msg).unwrap();
         Ok(())
     }
 }
-impl std::error::Error for CustomError{}
+impl std::error::Error for CustomError {}
 
 #[derive(clap::Parser)]
 #[command(author = "timelessnesses", about = "Nothing")]
@@ -66,23 +66,24 @@ fn main() {
 
     let window = {
         match video
-        .window("Nothing", 800, 600)
-        .position_centered()
-        .allow_highdpi()
-        // .resizable()
-        .metal_view()
-        .opengl()
-        .fullscreen()
-        .fullscreen_desktop()
-        .build() {
+            .window("Nothing", 800, 600)
+            .position_centered()
+            .allow_highdpi()
+            // .resizable()
+            .metal_view()
+            .opengl()
+            .fullscreen()
+            .fullscreen_desktop()
+            .build()
+        {
             Ok(w) => Some(w),
             Err(e) => {
                 report_error(e, "Failed to initialize SDL2 window");
                 None
             }
         }
-    }.unwrap();
-
+    }
+    .unwrap();
 
     let mut running = true;
     let mut canvas = match parsed.selected_gpu_renderer {
@@ -93,27 +94,25 @@ fn main() {
                 None
             }
         },
-        None => {
-            match window.into_canvas().build() {
-                Ok(c) => Some(c),
-                Err(e) => {
-                    report_error(e, "Failed to build default Canvas");
-                    None
-                }
+        None => match window.into_canvas().build() {
+            Ok(c) => Some(c),
+            Err(e) => {
+                report_error(e, "Failed to build default Canvas");
+                None
             }
         },
-    }.unwrap();
+    }
+    .unwrap();
     let mut event_pump = {
         match ctx.event_pump() {
             Ok(e) => Some(e),
             Err(e) => {
-                report_error(CustomError {
-                    msg: e
-                }, "Failed to initialize EventPump");
+                report_error(CustomError { msg: e }, "Failed to initialize EventPump");
                 None
             }
         }
-    }.unwrap();
+    }
+    .unwrap();
     let mut capper = fps_capper::FpsLimiter::new(fl as u32);
     let _ = ctrlc::set_handler(move || {
         running = !running;
@@ -126,34 +125,39 @@ fn main() {
             report_error(e, "Failed to initialize TTF Context");
             None
         }
-    }.unwrap();
-    let segoe_font = match font_ctx.load_font_from_rwops(sdl2::rwops::RWops::from_bytes(SEGOE).unwrap(), 45) {
-        Ok(f) => Some(f),
-        Err(e) => {
-            report_error(CustomError {
-                msg: e
-            }, "Failed to load Segoe UI font");
-            None
+    }
+    .unwrap();
+    let segoe_font =
+        match font_ctx.load_font_from_rwops(sdl2::rwops::RWops::from_bytes(SEGOE).unwrap(), 45) {
+            Ok(f) => Some(f),
+            Err(e) => {
+                report_error(CustomError { msg: e }, "Failed to load Segoe UI font");
+                None
+            }
         }
-    }.unwrap();
+        .unwrap();
 
-    let fps_font = match font_ctx.load_font_from_rwops(sdl2::rwops::RWops::from_bytes(SEGOE).unwrap(), 15) {
-        Ok(f) => Some(f),
-        Err(e) => {
-            report_error(CustomError {
-                msg: e
-            }, "Failed to load Segoe UI font");
-            None
+    let fps_font =
+        match font_ctx.load_font_from_rwops(sdl2::rwops::RWops::from_bytes(SEGOE).unwrap(), 15) {
+            Ok(f) => Some(f),
+            Err(e) => {
+                report_error(CustomError { msg: e }, "Failed to load Segoe UI font");
+                None
+            }
         }
-    }.unwrap();
+        .unwrap();
 
-    let intro_text = match segoe_font.render("Click any keys or left/right click on your mouse to start tracking.").shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK) {
+    let intro_text = match segoe_font
+        .render("Click any keys or left/right click on your mouse to start tracking.")
+        .shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK)
+    {
         Ok(t) => Some(t),
         Err(e) => {
             report_error(e, "Failed to render intro text");
             None
         }
-    }.unwrap();
+    }
+    .unwrap();
 
     let tc = canvas.texture_creator();
 
@@ -163,7 +167,8 @@ fn main() {
             report_error(e, "Failed to convert intro text to texture");
             None
         }
-    }.unwrap();
+    }
+    .unwrap();
 
     // states
     let mut clock_started = std::time::Instant::now();
@@ -189,14 +194,16 @@ fn main() {
         for event in event_pump.poll_iter() {
             if !active {
                 match event {
-                    sdl2::event::Event::Quit { .. } | sdl2::event::Event::KeyDown {
+                    sdl2::event::Event::Quit { .. }
+                    | sdl2::event::Event::KeyDown {
                         keycode: Some(sdl2::keyboard::Keycode::Escape),
                         ..
                     } => {
                         println!("Quit");
                         break 'running;
-                    },
-                    sdl2::event::Event::KeyDown { .. } | sdl2::event::Event::MouseButtonDown { .. } => {
+                    }
+                    sdl2::event::Event::KeyDown { .. }
+                    | sdl2::event::Event::MouseButtonDown { .. } => {
                         active = true;
                         kb_active = false;
                         mouse_button_active = false;
@@ -205,18 +212,19 @@ fn main() {
                         failed = false;
                         println!("Activated");
                         clock_started = Instant::now();
-                    },
+                    }
                     _ => {}
                 }
             } else {
                 match event {
-                    sdl2::event::Event::Quit { .. } | sdl2::event::Event::KeyDown {
+                    sdl2::event::Event::Quit { .. }
+                    | sdl2::event::Event::KeyDown {
                         keycode: Some(sdl2::keyboard::Keycode::Escape),
                         ..
                     } => {
                         println!("Quit");
-                        break 'running
-                    },
+                        break 'running;
+                    }
                     sdl2::event::Event::KeyDown { .. } | sdl2::event::Event::KeyUp { .. } => {
                         if ignore_first_keypress {
                             ignore_first_keypress = false;
@@ -227,7 +235,7 @@ fn main() {
                             failed_time = std::time::Instant::now();
                             failed = true;
                         }
-                    },
+                    }
                     sdl2::event::Event::MouseMotion { .. } => {
                         if ignore_first_keypress {
                             ignore_first_keypress = false;
@@ -238,8 +246,9 @@ fn main() {
                             failed_time = std::time::Instant::now();
                             failed = true;
                         }
-                    },
-                    sdl2::event::Event::MouseButtonDown { .. } | sdl2::event::Event::MouseButtonUp { .. } => {
+                    }
+                    sdl2::event::Event::MouseButtonDown { .. }
+                    | sdl2::event::Event::MouseButtonUp { .. } => {
                         if ignore_first_keypress {
                             ignore_first_keypress = false;
                             continue;
@@ -249,7 +258,7 @@ fn main() {
                             failed_time = std::time::Instant::now();
                             failed = true;
                         }
-                    },
+                    }
                     sdl2::event::Event::MouseWheel { .. } => {
                         if ignore_first_keypress {
                             ignore_first_keypress = false;
@@ -261,15 +270,20 @@ fn main() {
                             failed = true;
                         }
                     }
-                    _ => {},
+                    _ => {}
                 }
             }
         }
         if !active {
-            match canvas.copy(&textured_intro, None, Some(get_middle_texture(&textured_intro, &canvas, None))) {
-                Err(e) => {
-                    report_error(CustomError { msg: e }, "Failed to copy intro text to canvas")
-                },
+            match canvas.copy(
+                &textured_intro,
+                None,
+                Some(get_middle_texture(&textured_intro, &canvas, None)),
+            ) {
+                Err(e) => report_error(
+                    CustomError { msg: e },
+                    "Failed to copy intro text to canvas",
+                ),
                 _ => {}
             };
         } else {
@@ -286,73 +300,109 @@ fn main() {
                 } else if mouse_wheel_active {
                     reasoning = "Mouse wheel movement detected."
                 }
-                let duration_time = format!("Inactive for {}", format_duration(failed_time - clock_started));
-                let text = segoe_font.render(&duration_time).shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK).unwrap();
-                let text2 = segoe_font.render(format!("Reason: {}", reasoning).as_str()).shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK).unwrap();
-                canvas.copy(
-                    &tc.create_texture_from_surface(&text).unwrap(),
-                    None,
-                    Some(
-                        get_middle_surface(&text, &canvas, Some(
-                            (canvas.output_size().unwrap().1 as f64 * 0.4) as u32
-                        ))
+                let duration_time = format!(
+                    "Inactive for {}",
+                    format_duration(failed_time - clock_started)
+                );
+                let text = segoe_font
+                    .render(&duration_time)
+                    .shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK)
+                    .unwrap();
+                let text2 = segoe_font
+                    .render(format!("Reason: {}", reasoning).as_str())
+                    .shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK)
+                    .unwrap();
+                canvas
+                    .copy(
+                        &tc.create_texture_from_surface(&text).unwrap(),
+                        None,
+                        Some(get_middle_surface(
+                            &text,
+                            &canvas,
+                            Some((canvas.output_size().unwrap().1 as f64 * 0.4) as u32),
+                        )),
                     )
-                ).unwrap();
-                canvas.copy(
-                    &tc.create_texture_from_surface(&text2).unwrap(),
-                    None,
-                    Some(
-                        get_middle_surface(&text2, &canvas, Some(
-                            (canvas.output_size().unwrap().1 as f64 * 0.6) as u32
-                        ))
+                    .unwrap();
+                canvas
+                    .copy(
+                        &tc.create_texture_from_surface(&text2).unwrap(),
+                        None,
+                        Some(get_middle_surface(
+                            &text2,
+                            &canvas,
+                            Some((canvas.output_size().unwrap().1 as f64 * 0.6) as u32),
+                        )),
                     )
-                ).unwrap();
+                    .unwrap();
                 if (std::time::Instant::now() - failed_time).as_secs() >= 5 {
                     active = false;
-
                 }
-            } 
+            }
         }
-        let fps_text = fps_font.render(&format!("FPS: {}", fps)).shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK).unwrap();
-        let mf_text = fps_font.render(&format!("Maximum FPS: {}", mf)).shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK).unwrap();
-        let lfp_text = fps_font.render(&format!("Minimum FPS: {}", lf)).shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK).unwrap();
-        let fc_text = fps_font.render(&format!("Capped FPS: {}", fl)).shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK).unwrap();
-        canvas.copy(
-            &tc.create_texture_from_surface(&fps_text).unwrap(),
-            None,
-            Some(
-                sdl2::rect::Rect::new(
-                    0,0, fps_text.width(), fps_text.height()
-                )
+        let fps_text = fps_font
+            .render(&format!("FPS: {}", fps))
+            .shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK)
+            .unwrap();
+        let mf_text = fps_font
+            .render(&format!("Maximum FPS: {}", mf))
+            .shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK)
+            .unwrap();
+        let lfp_text = fps_font
+            .render(&format!("Minimum FPS: {}", lf))
+            .shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK)
+            .unwrap();
+        let fc_text = fps_font
+            .render(&format!("Capped FPS: {}", fl))
+            .shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK)
+            .unwrap();
+        canvas
+            .copy(
+                &tc.create_texture_from_surface(&fps_text).unwrap(),
+                None,
+                Some(sdl2::rect::Rect::new(
+                    0,
+                    0,
+                    fps_text.width(),
+                    fps_text.height(),
+                )),
             )
-        ).unwrap();
-        canvas.copy(
-            &tc.create_texture_from_surface(&mf_text).unwrap(),
-            None,
-            Some(
-                sdl2::rect::Rect::new(
-                    0,20, mf_text.width(), mf_text.height()
-                )
+            .unwrap();
+        canvas
+            .copy(
+                &tc.create_texture_from_surface(&mf_text).unwrap(),
+                None,
+                Some(sdl2::rect::Rect::new(
+                    0,
+                    20,
+                    mf_text.width(),
+                    mf_text.height(),
+                )),
             )
-        ).unwrap();
-        canvas.copy(
-            &tc.create_texture_from_surface(&lfp_text).unwrap(),
-            None,
-            Some(
-                sdl2::rect::Rect::new(
-                    0,40, lfp_text.width(), lfp_text.height()
-                )
+            .unwrap();
+        canvas
+            .copy(
+                &tc.create_texture_from_surface(&lfp_text).unwrap(),
+                None,
+                Some(sdl2::rect::Rect::new(
+                    0,
+                    40,
+                    lfp_text.width(),
+                    lfp_text.height(),
+                )),
             )
-        ).unwrap();
-        canvas.copy(
-            &tc.create_texture_from_surface(&fc_text).unwrap(),
-            None,
-            Some(
-                sdl2::rect::Rect::new(
-                    0,60, fc_text.width(), fc_text.height()
-                )
+            .unwrap();
+        canvas
+            .copy(
+                &tc.create_texture_from_surface(&fc_text).unwrap(),
+                None,
+                Some(sdl2::rect::Rect::new(
+                    0,
+                    60,
+                    fc_text.width(),
+                    fc_text.height(),
+                )),
             )
-        ).unwrap();
+            .unwrap();
         canvas.present();
         fc += 1;
         let elapsed_time = ft.elapsed();
@@ -375,7 +425,6 @@ fn main() {
         canvas.clear();
         capper.limit_fps();
     }
-
 }
 
 fn get_middle_surface(
@@ -448,7 +497,8 @@ fn format_duration(dur: std::time::Duration) -> String {
     let years = days / 365; // Approximation, not considering leap years
 
     let formatted_duration = if years > 0 {
-        format!("{} years, {} months, {}weeks, {} days, {} hours, {} minutes, {} seconds.",
+        format!(
+            "{} years, {} months, {}weeks, {} days, {} hours, {} minutes, {} seconds.",
             years,
             months % 12,
             weeks % 4,
@@ -458,7 +508,8 @@ fn format_duration(dur: std::time::Duration) -> String {
             seconds % 60,
         )
     } else if months > 0 {
-        format!("{} months, {}weeks, {} days, {} hours, {} minutes, {} seconds.",
+        format!(
+            "{} months, {}weeks, {} days, {} hours, {} minutes, {} seconds.",
             months,
             weeks % 4,
             days % 30,
@@ -467,7 +518,8 @@ fn format_duration(dur: std::time::Duration) -> String {
             seconds % 60,
         )
     } else if weeks > 0 {
-        format!("{}weeks, {} days, {} hours, {} minutes, {} seconds.",
+        format!(
+            "{}weeks, {} days, {} hours, {} minutes, {} seconds.",
             weeks,
             days % 7,
             hours % 24,
@@ -475,23 +527,22 @@ fn format_duration(dur: std::time::Duration) -> String {
             seconds % 60,
         )
     } else if days > 0 {
-        format!("{} days, {} hours, {} minutes, {} seconds.",
+        format!(
+            "{} days, {} hours, {} minutes, {} seconds.",
             days,
             hours % 24,
             minutes % 60,
             seconds % 60,
         )
     } else if hours > 0 {
-        format!("{} hours, {} minutes, {} seconds.",
+        format!(
+            "{} hours, {} minutes, {} seconds.",
             hours,
             minutes % 60,
             seconds % 60,
         )
     } else if minutes > 0 {
-        format!("{} minutes, {} seconds.",
-            minutes,
-            seconds % 60,
-        )
+        format!("{} minutes, {} seconds.", minutes, seconds % 60,)
     } else {
         format!("{} seconds.", seconds)
     };

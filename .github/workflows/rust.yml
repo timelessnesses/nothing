@@ -17,6 +17,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: install gtk and sdl2
-      run: sudo apt install libsdl2-dev libsdl2-ttf-dev libgtk-dev
+      run: sudo apt install libsdl2-dev libsdl2-ttf-dev libgtk3-dev
     - name: Build
       run: cargo build --verbose

@@ -15,6 +15,6 @@ For Android just switch to the android branch for detailed stuff
 
 ### Linux and everything else (Linux is tested while other isn't)
 
-1. Install `libsdl2-dev` and `libsdl2-ttf-dev` and `libgtk-dev` (maybe not for macos for gtk)
+1. Install `libsdl2-dev` and `libsdl2-ttf-dev` and `libgtk3-dev` (maybe not for macos for gtk)
 2. Install `pkgconfig`
 3. `cargo build -r`

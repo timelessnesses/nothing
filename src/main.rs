@@ -40,7 +40,7 @@ fn report_error(error: impl std::error::Error, title: &str) {
     panic!()
 }
 
-const SEGOE: &[u8; 509920] = include_bytes!("assets/segoe-ui.ttf");
+const ROBOTO: &[u8; 167000] = include_bytes!("assets/Roboto-Light.ttf");
 
 fn main() {
     windows_quirks::windows_hide_console(); // fuck you
@@ -127,27 +127,27 @@ fn main() {
         }
     }
     .unwrap();
-    let segoe_font =
-        match font_ctx.load_font_from_rwops(sdl2::rwops::RWops::from_bytes(SEGOE).unwrap(), 45) {
+    let ROBOTO_font =
+        match font_ctx.load_font_from_rwops(sdl2::rwops::RWops::from_bytes(ROBOTO).unwrap(), 45) {
             Ok(f) => Some(f),
             Err(e) => {
-                report_error(CustomError { msg: e }, "Failed to load Segoe UI font");
+                report_error(CustomError { msg: e }, "Failed to load ROBOTO UI font");
                 None
             }
         }
         .unwrap();
 
     let fps_font =
-        match font_ctx.load_font_from_rwops(sdl2::rwops::RWops::from_bytes(SEGOE).unwrap(), 15) {
+        match font_ctx.load_font_from_rwops(sdl2::rwops::RWops::from_bytes(ROBOTO).unwrap(), 15) {
             Ok(f) => Some(f),
             Err(e) => {
-                report_error(CustomError { msg: e }, "Failed to load Segoe UI font");
+                report_error(CustomError { msg: e }, "Failed to load ROBOTO UI font");
                 None
             }
         }
         .unwrap();
 
-    let intro_text = match segoe_font
+    let intro_text = match ROBOTO_font
         .render("Click any keys or left/right click on your mouse to start tracking.")
         .shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK)
     {
@@ -309,12 +309,12 @@ fn main() {
                     format_duration(failed_time - clock_started)
                 );
                 let wrapped = word_wrap(
-                    &format!("{} Reason: {}", duration_time, reasoning.join(", ") + "."), width, &segoe_font
+                    &format!("{} Reason: {}", duration_time, reasoning.join(", ") + "."), width, &ROBOTO_font
                 );
-                let h = wrapped.len() as i32 * segoe_font.height();
+                let h = wrapped.len() as i32 * ROBOTO_font.height();
                 let mut yc = (((height / 2) - h as u32) / 2) as i32;
                 for line in wrapped {
-                    let rendered = segoe_font.render(&line).shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK).unwrap();
+                    let rendered = ROBOTO_font.render(&line).shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK).unwrap();
                     canvas.copy(
                         &tc.create_texture_from_surface(&rendered).unwrap(),
                         None,
@@ -325,19 +325,19 @@ fn main() {
                             rendered.height()
                         )
                     ).unwrap();
-                    yc += segoe_font.height();
+                    yc += ROBOTO_font.height();
                 }
                 if (std::time::Instant::now() - failed_time).as_secs() >= 5 {
                     active = false;
                 }
             } else { // wow
                 let wrapped = word_wrap(
-                    &format!("Have been inactive for {}. Keep going!", format_duration(std::time::Instant::now() - clock_started)), width, &segoe_font
+                    &format!("Have been inactive for {}. Keep going!", format_duration(std::time::Instant::now() - clock_started)), width, &ROBOTO_font
                 );
-                let h = wrapped.len() as i32 * segoe_font.height();
+                let h = wrapped.len() as i32 * ROBOTO_font.height();
                 let mut yc = (((height / 2) - h as u32) / 2) as i32;
                 for line in wrapped {
-                    let rendered = segoe_font.render(&line).shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK).unwrap();
+                    let rendered = ROBOTO_font.render(&line).shaded(sdl2::pixels::Color::WHITE, sdl2::pixels::Color::BLACK).unwrap();
                     canvas.copy(
                         &tc.create_texture_from_surface(&rendered).unwrap(),
                         None,
@@ -348,7 +348,7 @@ fn main() {
                             rendered.height()
                         )
                     ).unwrap();
-                    yc += segoe_font.height();
+                    yc += ROBOTO_font.height();
                 }
             }
         }

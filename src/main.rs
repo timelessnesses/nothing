@@ -1,3 +1,4 @@
+
 use std::time::Instant;
 
 use clap::Parser;
@@ -43,15 +44,34 @@ fn report_error(error: impl std::error::Error, title: &str) {
 const ROBOTO: &[u8; 167000] = include_bytes!("assets/Roboto-Light.ttf");
 
 fn main() {
-    windows_quirks::windows_hide_console(); // fuck you
+    #[cfg(target_os = "windows")]
+    {
+        use winapi::um::wincon::{AttachConsole, ATTACH_PARENT_PROCESS};
+        unsafe {
+            AttachConsole(ATTACH_PARENT_PROCESS);
+        }
+    }
     let parsed = Cli::parse();
     if parsed.list_gpu_renderers {
         for (i, item) in sdl2::render::drivers().enumerate() {
+            let mut flags = vec![];
+            if item.flags & 0x01 > 0 {
+                flags.push("Software Rendered");
+            }
+            if item.flags & 0x02 > 0 {
+                flags.push("Renderer Accelerated");
+            }
+            if item.flags & 0x04 > 0 {
+                flags.push("VSynced");
+            }
+            if item.flags & 0x08 > 0 {
+                flags.push("Support rendering into a texture");
+            }
             println!(
                 "Renderer #{}:\n   Name: {}\n  Flags: {}",
                 i + 1,
                 item.name,
-                item.flags
+                flags.join(", ")
             )
         }
         return;

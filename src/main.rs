@@ -3,7 +3,7 @@ use std::time::Instant;
 
 use clap::Parser;
 use ctrlc;
-use sdl2;
+use sdl2::{self, render::Canvas};
 // use winit;
 use msgbox;
 
@@ -27,18 +27,26 @@ impl std::error::Error for CustomError {}
 struct Cli {
     /// Frame limiting
     #[arg(short, long)]
-    fps: Option<i64>,
+    fps: Option<u64>,
     /// List GPU renderers (for the SELECTED_GPU_RENDERER arg)
     #[arg(short, long)]
     list_gpu_renderers: bool,
     /// Select your own renderer if you want to
     #[arg(short, long)]
     selected_gpu_renderer: Option<usize>,
+
+    /// Force VSync
+    #[arg(short, long)]
+    vsync: Option<bool>,
+
+    /// Force Unlimited FPS
+    #[arg(short, long)]
+    unlimited: bool
 }
 
 fn report_error(error: impl std::error::Error, title: &str) {
     msgbox::create(title, &error.to_string(), msgbox::IconType::Error).unwrap();
-    panic!()
+    panic!("{}", error)
 }
 
 const ROBOTO: &[u8; 167000] = include_bytes!("assets/Roboto-Light.ttf");
@@ -106,23 +114,48 @@ fn main() {
     .unwrap();
 
     let mut running = true;
-    let mut canvas = match parsed.selected_gpu_renderer {
-        Some(i) => match window.into_canvas().index((i - 1) as u32).build() {
-            Ok(c) => Some(c),
-            Err(e) => {
-                report_error(e, "Failed to build Canvas");
-                None
-            }
-        },
-        None => match window.into_canvas().build() {
-            Ok(c) => Some(c),
-            Err(e) => {
-                report_error(e, "Failed to build default Canvas");
-                None
-            }
-        },
+    let vsync = {
+        match parsed.vsync {
+            Some(t) => t,
+            None => false
+        }
+    };
+    let mut canvas: Canvas<sdl2::video::Window>;
+    if !vsync {    
+        canvas = match parsed.selected_gpu_renderer {
+            Some(i) => match window.into_canvas().index((i - 1) as u32).accelerated().build() {
+                Ok(c) => Some(c),
+                Err(e) => {
+                    report_error(e, "Failed to build Canvas");
+                    None
+                }
+            },
+            None => match window.into_canvas().accelerated().build() {
+                Ok(c) => Some(c),
+                Err(e) => {
+                    report_error(e, "Failed to build default Canvas");
+                    None
+                }
+            },
+        }.unwrap();
+    } else {
+        canvas = match parsed.selected_gpu_renderer {
+            Some(i) => match window.into_canvas().index((i - 1) as u32).accelerated().present_vsync().build() {
+                Ok(c) => Some(c),
+                Err(e) => {
+                    report_error(e, "Failed to build Canvas");
+                    None
+                }
+            },
+            None => match window.into_canvas().accelerated().present_vsync().build() {
+                Ok(c) => Some(c),
+                Err(e) => {
+                    report_error(e, "Failed to build default Canvas");
+                    None
+                }
+            },
+        }.unwrap();
     }
-    .unwrap();
     let mut event_pump = {
         match ctx.event_pump() {
             Ok(e) => Some(e),
@@ -133,7 +166,13 @@ fn main() {
         }
     }
     .unwrap();
-    let mut capper = fps_capper::FpsLimiter::new(fl as u32);
+    let mut capper = fps_capper::FpsLimiter::new({
+        if parsed.unlimited {
+            -1 as i32
+        } else {
+            fl as i32
+        }
+    });
     let _ = ctrlc::set_handler(move || {
         running = !running;
     });
